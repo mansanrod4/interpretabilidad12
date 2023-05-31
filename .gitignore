@@ -3,3 +3,5 @@ Memoria/memoria.log
 Memoria/memoria.fdb_latexmk
 Memoria/memoria.fls
 Memoria/memoria.aux
+__pycache__/
+.venv
