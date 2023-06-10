@@ -13,6 +13,7 @@ from tensorflow import get_logger
 import random
 from tensorflow import random as tensorflow_random
 from tensorflow import keras
+from sklearn.ensemble import RandomForestClassifier
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 get_logger().setLevel('ERROR')
@@ -47,3 +48,16 @@ red_occupancy.weights()
 normalizador = keras.layers.Normalization()
 normalizador.adapt(atributos_entrenamiento)
 lime.algoritm_lime(4, red_occupancy.weights)
+
+#Random Forest
+model = RandomForestClassifier(n_estimators=500)
+model.fit(atributos_entrenamiento, objetivo_entrenamiento)
+def f(x):
+    model = RandomForestClassifier(n_estimators=100)
+    model.fit(atributos_entrenamiento, objetivo_entrenamiento)
+    return model.predict(x)
+min_vals = numpy.min(atributos_entrenamiento, axis=0)
+max_vals = numpy.max(atributos_entrenamiento, axis=0)
+N = 100
+k = 10
+explainer = lime.algoritm_lime(N, f, atributos_prueba[0], k, min_vals, max_vals)
