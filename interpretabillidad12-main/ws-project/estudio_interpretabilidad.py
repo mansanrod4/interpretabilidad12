@@ -1,63 +1,167 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jun  9 13:06:28 2023
-
-@author: LENOVO
-"""
-import lime
 import os
+import random
+
+import lime
 import numpy
 import pandas
-from  sklearn import model_selection
-from tensorflow import get_logger
-import random
-from tensorflow import random as tensorflow_random
-from tensorflow import keras
+import sklearn
+from sklearn import model_selection
+from sklearn.calibration import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
+from tensorflow import get_logger, keras
+from tensorflow import random as tensorflow_random
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-get_logger().setLevel('ERROR')
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+get_logger().setLevel("ERROR")
 random.seed(2398572)
 tensorflow_random.set_seed(394867)
 numpy.random.seed(43958734)
 numpy.set_printoptions(threshold=10)
-ocupation = pandas.read_csv('../data/Occupancy_Estimation.csv', 
-                            header=None, names=['Date','Time','S1_Temp','S2_Temp','S3_Temp',
-                                                'S4_Temp','S1_Light','S2_Light','S3_Light','S4_Light','S1_Sound',
-                                                'S2_Sound','S3_Sound','S4_Sound','S5_CO2','S5_CO2_Slope','S6_PIR',
-                                                'S7_PIR','Room_Occupancy_Count'])
 
-ocupation.head()
-atributos = ocupation.loc[:, 'S1_Temp':'S7_PIR']
-atributos = atributos.to_numpy()
-print(atributos)
-objetivo = ocupation['Room_Occupancy_Count']
-objetivo = pandas.get_dummies(objetivo)
-print(objetivo)
-objetivo = objetivo.to_numpy()
-print(objetivo)
-(atributos_entrenamiento, atributos_prueba, objetivo_entrenamiento, objetivo_prueba) = model_selection.train_test_split(atributos, objetivo, test_size=.33)
-red_occupancy = keras.Sequential()
-red_occupancy.add(keras.Input(shape=16,))
-red_occupancy.add(keras.layers.Dense(70,activation='relu'))
-red_occupancy.add(keras.layers.Dense(4, activation='softmax'))
-red_occupancy.summary()
-red_occupancy.compile(optimizer='SGD', loss='categorical_crossentropy', metrics=['accuracy'])
-red_occupancy.fit(atributos_entrenamiento, objetivo_entrenamiento, batch_size=256, epochs=20)
-red_occupancy.weights()
-normalizador = keras.layers.Normalization()
-normalizador.adapt(atributos_entrenamiento)
-lime.algoritm_lime(4, red_occupancy.weights)
 
-#Random Forest
-model = RandomForestClassifier(n_estimators=500)
-model.fit(atributos_entrenamiento, objetivo_entrenamiento)
-def f(x):
-    model = RandomForestClassifier(n_estimators=100)
+def occupation_models():
+    occupation = pandas.read_csv(
+        "../data/Occupancy_Estimation.csv",
+        header=None,
+        names=[
+            "Date",
+            "Time",
+            "S1_Temp",
+            "S2_Temp",
+            "S3_Temp",
+            "S4_Temp",
+            "S1_Light",
+            "S2_Light",
+            "S3_Light",
+            "S4_Light",
+            "S1_Sound",
+            "S2_Sound",
+            "S3_Sound",
+            "S4_Sound",
+            "S5_CO2",
+            "S5_CO2_Slope",
+            "S6_PIR",
+            "S7_PIR",
+            "Room_Occupancy_Count",
+        ],
+    )
+    date_encoder = LabelEncoder()
+    time_encoder = LabelEncoder()
+    occupation["Date"] = date_encoder.fit_transform(occupation["Date"])
+    occupation["Time"] = time_encoder.fit_transform(occupation["Time"])
+    # Obtener los valores mínimos y máximos de cada atributo
+    min_vals = numpy.min(occupation, axis=0)
+    max_vals = numpy.max(occupation, axis=0)
+    # Normalizar el dataset utilizando Min-Max Scaling
+    occupation = (occupation - min_vals) / (max_vals - min_vals)
+
+    atributos = occupation.loc[:, "Date":"S7_PIR"]
+    atributos = atributos.to_numpy()
+    objetivo = occupation["Room_Occupancy_Count"]
+    objetivo = pandas.get_dummies(objetivo)
+    objetivo = objetivo.to_numpy()
+
+    (
+        atributos_entrenamiento,
+        atributos_prueba,
+        objetivo_entrenamiento,
+        objetivo_prueba,
+    ) = model_selection.train_test_split(atributos, objetivo, test_size=256)
+
+    occupation_rn_model = redneuronal(
+        atributos_entrenamiento, objetivo_entrenamiento, 18, 4
+    )
+    occupation_rf_model = randomforest(
+        atributos_entrenamiento, objetivo_entrenamiento, 500
+    )
+
+    min_vals = numpy.min(atributos_entrenamiento, axis=0)
+    max_vals = numpy.max(atributos_entrenamiento, axis=0)
+
+    return (
+        occupation_rn_model,
+        occupation_rf_model,
+        atributos_prueba,
+        min_vals,
+        max_vals,
+    )
+
+def drybean_models():
+    drybean = pandas.read_csv(
+        "../data/Dry_Bean.csv",
+        header=None,
+        names=[
+            "Area",
+            "Perimeter",
+            "MajorAxisLength",
+            "MinorAxisLength",
+            "AspectRation",
+            "Eccentricity",
+            "ConvexArea",
+            "EquivDiameter",
+            "Extent",
+            "Solidity",
+            "roundness",
+            "Compactness",
+            "ShapeFactor1",
+            "ShapeFactor2",
+            "ShapeFactor3",
+            "ShapeFactor4",
+            "Class",
+        ],
+    )
+    atributos = drybean.loc[:, "Area":"ShapeFactor4"]
+    atributos = atributos.to_numpy()
+    objetivo = drybean["Class"]
+    objetivo = pandas.get_dummies(objetivo)
+    objetivo = objetivo.to_numpy()
+    # Obtener los valores mínimos y máximos de cada atributo
+    min_vals = numpy.min(atributos, axis=0)
+    max_vals = numpy.max(atributos, axis=0)
+
+    # Normalizar el dataset utilizando Min-Max Scaling
+    atributos = (atributos - min_vals) / (max_vals - min_vals)
+    (
+        atributos_entrenamiento,
+        atributos_prueba,
+        objetivo_entrenamiento,
+        objetivo_prueba,
+    ) = model_selection.train_test_split(atributos, objetivo, test_size=256)
+
+    drybean_rn_model = redneuronal(atributos_entrenamiento, objetivo_entrenamiento, 16, 7)
+    drybean_rf_model = randomforest(atributos_entrenamiento, objetivo_entrenamiento, 500)
+
+    return drybean_rn_model, drybean_rf_model, atributos_prueba, min_vals, max_vals
+
+def redneuronal(atributos_entrenamiento, objetivo_entrenamiento, input_shape, output_shape):
+    model = keras.Sequential()
+    model.add(
+        keras.Input(
+            shape=input_shape,
+        )
+    )
+    model.add(keras.layers.Dense(70, activation="relu"))
+    model.add(keras.layers.Dense(output_shape, activation="softmax"))
+    #model.summary()
+    model.compile(
+        optimizer="SGD", loss="categorical_crossentropy", metrics=["accuracy"]
+    )
+
+    model.fit(
+        atributos_entrenamiento, objetivo_entrenamiento, batch_size=256, epochs=20
+    )
+    return model
+
+def randomforest(atributos_entrenamiento, objetivo_entrenamiento, n_estimators):
+    model = RandomForestClassifier(n_estimators)
     model.fit(atributos_entrenamiento, objetivo_entrenamiento)
-    return model.predict(x)
-min_vals = numpy.min(atributos_entrenamiento, axis=0)
-max_vals = numpy.max(atributos_entrenamiento, axis=0)
-N = 100
-k = 10
-explainer = lime.algoritm_lime(N, f, atributos_prueba[0], k, min_vals, max_vals)
+    return model
+
+# def estudio_interpretabilidad(
+#     N, k, model1, model2, atributos_prueba, min_vals, max_vals
+# ):
+#     for atributos in atributos_prueba:
+#         explainer1 = lime.algoritm_lime(N, model1, atributos, k, min_vals, max_vals)
+#         explainer2 = lime.algoritm_lime(N, model2, atributos, k, min_vals, max_vals)
+
+#         # METRICAS...
