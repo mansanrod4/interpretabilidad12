@@ -4,12 +4,10 @@ from itertools import combinations
 
 #Identidad
 
-def identidad(xa, xb, ea, eb, metrica_distancia='euclidean'):
-    distancia_x = cdist(xa, xb, metric=metrica_distancia)
+def identidad(xa, xb, ea, eb):
+    distancia_x = np.linalg.norm(xa - xb, axis=None)
     if np.any(distancia_x == 0):
-        idx_zeros = np.where(distancia_x == 0)
-
-        distancia_e = cdist(ea[idx_zeros], eb[idx_zeros], meric=metrica_distancia)
+        distancia_e = np.linalg.norm(ea - eb, axis=None)
         return np.all(distancia_e == 0)
     else:
         return True

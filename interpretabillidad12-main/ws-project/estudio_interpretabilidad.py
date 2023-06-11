@@ -10,6 +10,7 @@ from sklearn.calibration import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from tensorflow import get_logger, keras
 from tensorflow import random as tensorflow_random
+import metrics
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 get_logger().setLevel("ERROR")
@@ -158,10 +159,51 @@ def randomforest(atributos_entrenamiento, objetivo_entrenamiento, n_estimators):
     return model
 
 # def estudio_interpretabilidad(
-#     N, k, model1, model2, atributos_prueba, min_vals, max_vals
-# ):
-#     for atributos in atributos_prueba:
-#         explainer1 = lime.algoritm_lime(N, model1, atributos, k, min_vals, max_vals)
-#         explainer2 = lime.algoritm_lime(N, model2, atributos, k, min_vals, max_vals)
+#      N, k, model1, model2, atributos_prueba, min_vals, max_vals
+#  ):
+#      for i in atributos_prueba.shape[0]:
+#         explainer1 = lime.algoritm_lime(N, model1, atributos_prueba[i], k, min_vals, max_vals)
+#         for j in atributos_prueba.shape[0]:
+#             explainer2 = lime.algoritm_lime(N, model1, atributos_prueba[j], k, min_vals, max_vals)
 
-#         # METRICAS...
+#             metrics.identidad(atributos_prueba[i], atributos_prueba[j], explainer1[0], explainer2[0])
+
+#         # explainer2 = lime.algoritm_lime(N, model2, atributos, k, min_vals, max_vals)
+
+#          # METRICAS...
+
+
+# def estudio_identidad(N, k, model1, atributos_prueba, min_vals, max_vals):
+#     correct_count = 0
+#     total_pairs = atributos_prueba.shape[0] * atributos_prueba.shape[0]
+
+#     for i in range(atributos_prueba.shape[0]):
+#         explainer1 = lime.algoritm_lime(N, model1, atributos_prueba[i], k, min_vals, max_vals)
+#         for j in range(atributos_prueba.shape[0]):
+#             explainer2 = lime.algoritm_lime(N, model1, atributos_prueba[j], k, min_vals, max_vals)
+
+#             if metrics.identidad(atributos_prueba[i], atributos_prueba[j], explainer1[0], explainer2[0]):
+#                 correct_count += 1
+
+#     accuracy = (correct_count / total_pairs) * 100
+#     return accuracy
+
+from itertools import combinations
+
+def estudio_identidad(N, k, model1, atributos_prueba, min_vals, max_vals):
+    correct_count = 0
+    total_pairs = len(list(combinations(range(atributos_prueba.shape[0]), 2)))
+
+    for i, j in combinations(range(atributos_prueba.shape[0]), 2):
+        dist = numpy.linalg.norm(atributos_prueba[i] - atributos_prueba[j])
+        if dist == 0:
+            explainer1 = lime.algoritm_lime(N, model1, atributos_prueba[i], k, min_vals, max_vals)
+            explainer2 = lime.algoritm_lime(N, model1, atributos_prueba[j], k, min_vals, max_vals)
+
+            distancia_e = numpy.linalg.norm(explainer1[0] - explainer2[0], axis=None)
+
+            if distancia_e == 0:
+                correct_count += 1
+
+    accuracy = (correct_count / total_pairs) * 100
+    return accuracy
