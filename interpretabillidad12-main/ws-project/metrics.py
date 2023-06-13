@@ -3,6 +3,7 @@ from scipy.spatial.distance import cdist
 from itertools import combinations
 
 from sklearn.isotonic import spearmanr
+from sklearn.linear_model import LinearRegression
 from scipy.spatial.distance import euclidean
 
 # Identidad
@@ -70,7 +71,45 @@ def selectivity(importances):
 
 
 # Coherencia
+#Aquellos atributos con menor importancia (se saca con selectividad) serán eliminados de X_original
+#La señal resultante será X_sin_caracteristicas: data.drop(["noImportante1", "noImportante2"..], axis=1)
+
+
+def coherence(X_original, y_original, X_sin_caracteristicas):
+    
+    # Entrenar el modelo con la señal original
+    modelo = LinearRegression()
+    modelo.fit(X_original, y_original)
+    
+    # Calcular el error de predicción con características importantes
+    predicciones_originales = modelo.predict(X_original)
+    error_prediccion_originales = np.mean((predicciones_originales - y_original) ** 2)
+    
+    # Calcular el error de predicción sin características no importantes
+    predicciones_sin_caracteristicas = modelo.predict(X_sin_caracteristicas)
+    error_prediccion_sin_caracteristicas = np.mean((predicciones_sin_caracteristicas - y_original) ** 2)
+    
+    # Calcular la métrica de coherencia como la diferencia de errores
+    coherencia = abs(error_prediccion_originales - error_prediccion_sin_caracteristicas)
+    
+    return coherencia, error_prediccion_originales, error_prediccion_sin_caracteristicas
+    
 
 # Completitud
+#error_explicacion es error_prediccion_sin_caracteristicas de coherence
+#error_prediccion es error_prediccion_originales de coherence
 
-# Congruencia
+
+def completitud(error_explicacion, error_prediccion):
+    
+    return error_explicacion/error_prediccion  
+    
+
+#Congruencia, desviación estándar de la coherencia
+
+
+def congruencia(coherencia):
+    
+    return np.std(coherencia) 
+
+
