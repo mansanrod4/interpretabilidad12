@@ -5,46 +5,54 @@ from itertools import combinations
 from sklearn.isotonic import spearmanr
 from scipy.spatial.distance import euclidean
 
-#Identidad
+# Identidad
+
 
 def identidad(xa, xb, ea, eb):
     distancia_x = np.linalg.norm(xa - xb, axis=None)
+    print("Distancia de muestras: ", distancia_x)
     if np.any(distancia_x == 0):
         distancia_e = np.linalg.norm(ea - eb, axis=None)
+        print("Distancia de explicaciones: ", distancia_e)
         return np.all(distancia_e == 0)
     else:
         return True
-    
-#Separabilidad
 
-def separability(importances, true_labels):
-    classes = np.unique(true_labels)
-    num_classes = len(classes)
 
-    class_importances = [np.mean([importance for importance, label in zip(importances, true_labels) if label == c]) for c in classes]
-    class_stds = [np.std([importance for importance, label in zip(importances, true_labels) if label == c]) for c in classes]
+# Separabilidad
 
-    combinations_list = list(combinations(range(num_classes), 2))
-    separabilities = []
-    
-    for class1, class2 in combinations_list:
-        separability = (class_importances[class1] - class_importances[class2]) / (class_stds[class1] + class_stds[class2])
-        separabilities.append(separability)
 
-    average_separability = np.mean(separabilities)
+def separabilidad(xa, xb, ea, eb):
+    distancia_x = np.linalg.norm(xa - xb, axis=None)
+    print("Distancia de muestras: ", distancia_x)
+    if np.any(distancia_x != 0):
+        distancia_e = np.linalg.norm(ea - eb, axis=None)
+        print("Distancia de explicaciones: ", distancia_e)
+        return np.all(distancia_e != 0)
+    else:
+        return True
 
-    return average_separability
 
-#Estabilidad
+# Estabilidad
 
-def stability(x1, x2, e1, e2):
-    distancia_muestras = euclidean(x1.flatten(), x2.flatten())
-    distancia_explicaciones = euclidean(e1.flatten(), e2.flatten())
 
-    correlacion, _ = spearmanr(distancia_muestras, distancia_explicaciones)
-    return correlacion
+def estabilidad(x1, muestras, e1, explicaciones):
+    distancias_muestras = []
+    distancias_explicaciones = []
+    for muestra in muestras:
+        distancia_muestra = euclidean(x1.flatten(), muestra.flatten())
+        distancias_muestras.append(distancia_muestra)
 
-#Selectividad
+    for explicacion in explicaciones:
+        distancia_explicacion = euclidean(e1.flatten(), explicacion.flatten())
+        distancias_explicaciones.append(distancia_explicacion)
+    correlacion, _ = spearmanr(distancias_muestras, distancias_explicaciones)
+    print("Correlación: ", correlacion)
+    return correlacion > 0
+
+
+# Selectividad
+
 
 def selectivity(importances):
     num_classes = len(importances)
@@ -60,9 +68,9 @@ def selectivity(importances):
 
     return average_selectivity
 
-#Coherencia
 
-#Completitud
+# Coherencia
 
-#Congruencia
+# Completitud
 
+# Congruencia
