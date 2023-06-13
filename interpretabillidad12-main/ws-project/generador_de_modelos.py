@@ -28,68 +28,91 @@ np.set_printoptions(threshold=10)
 
 
 def exploracion_datos():
-    dryBean = pandas.read_csv("../data/Dry_Bean.csv",
-                            header=None, names=['A','P','L','l','K','Ec',
-                                                'C','Ed','Ex','S','R','CO',
-                                                'SF1','SF2','SF3','SF4','Class'])
-    occupation = pandas.read_csv("../data/Occupancy_Estimation.csv",
-                                  header=None, names=['Date','Time','S1_Temp','S2_Temp','S3_Temp',
-                                  'S4_Temp','S1_Light','S2_Light','S3_Light','S4_Light','S1_Sound',
-                                  'S2_Sound','S3_Sound','S4_Sound','S5_CO2','S5_CO2_Slope','S6_PIR',
-                                  'S7_PIR','Room_Occupancy_Count'])
-    
+    dryBean = pandas.read_csv(
+        "../data/Dry_Bean.csv",
+        header=None,
+        names=[
+            "A",
+            "P",
+            "L",
+            "l",
+            "K",
+            "Ec",
+            "C",
+            "Ed",
+            "Ex",
+            "S",
+            "R",
+            "CO",
+            "SF1",
+            "SF2",
+            "SF3",
+            "SF4",
+            "Class",
+        ],
+    )
+    occupation = pandas.read_csv(
+        "../data/Occupancy_Estimation.csv",
+        header=None,
+        names=[
+            "Date",
+            "Time",
+            "S1_Temp",
+            "S2_Temp",
+            "S3_Temp",
+            "S4_Temp",
+            "S1_Light",
+            "S2_Light",
+            "S3_Light",
+            "S4_Light",
+            "S1_Sound",
+            "S2_Sound",
+            "S3_Sound",
+            "S4_Sound",
+            "S5_CO2",
+            "S5_CO2_Slope",
+            "S6_PIR",
+            "S7_PIR",
+            "Room_Occupancy_Count",
+        ],
+    )
+
     # Tablas y gráficas de la memoria por orden de aparición
-    
+
     # Primeros 5 elementos de cada conjunto
     print(dryBean.head(5))
     print(occupation.head(5))
-    
+
     # Atributos de cada conjunto
     print(dryBean.info())
     print(occupation.info())
 
     # Estadísticas de algunos atributos numéricos
-    print(occupation['S1_Temp'].describe())
-    print(occupation['S1_Light'].describe())
-    print(occupation['S1_Sound'].describe())
-    print(occupation['S5_CO2'].describe())
-    print(occupation['S7_PIR'].describe())
+    print(occupation["S1_Temp"].describe())
+    print(occupation["S1_Light"].describe())
+    print(occupation["S1_Sound"].describe())
+    print(occupation["S5_CO2"].describe())
+    print(occupation["S7_PIR"].describe())
 
     # Matrices de correlación
-    corrDryBean = dryBean.set_index('Class').corr()
+    corrDryBean = dryBean.set_index("Class").corr()
     sm.graphics.plot_corr(corrDryBean, xnames=list(corrDryBean.columns))
     plt.show()
-    corrOccupation = occupation.set_index('Room_Occupancy_Count').corr()
+    corrOccupation = occupation.set_index("Room_Occupancy_Count").corr()
     sm.graphics.plot_corr(corrOccupation, xnames=list(corrOccupation.columns))
     plt.show()
 
     # Histogramas de algunas variables numéricas, se ejecutan de uno en uno
-    fig,axes=plt.subplots(2,2)
-    axes[0,0].hist(x="Ex",data=dryBean,edgecolor="black",linewidth=2)
-    axes[0,0].set_title("Extent")
-    axes[0,1].hist(x="S",data=dryBean,edgecolor="black",linewidth=2)
-    axes[0,1].set_title("Solidity")
-    axes[1,0].hist(x="R",data=dryBean,edgecolor="black",linewidth=2)
-    axes[1,0].set_title("Roundness")
-    axes[1,1].hist(x="CO",data=dryBean,edgecolor="black",linewidth=2)
-    axes[1,1].set_title("Compactness")
-    fig.set_size_inches(10,10)
-
-    # fig,axes=plt.subplots(2,2)
-    # axes[0,0].hist(x="S1_Temp",data=occupation,edgecolor="black",linewidth=2)
-    # axes[0,0].set_title("S1_Temp")
-    # axes[0,1].hist(x="S1_Light",data=occupation,edgecolor="black",linewidth=2)
-    # axes[0,1].set_title("S1_Light")
-    # axes[1,0].hist(x="S1_Sound",data=occupation,edgecolor="black",linewidth=2)
-    # axes[1,0].set_title("S1_Sound")
-    # axes[1,1].hist(x="S5_CO2_Slope",data=occupation,edgecolor="black",linewidth=2)
-    # axes[1,1].set_title("S5_CO2_Slope")
-    # fig.set_size_inches(10,10)
-
-    # Histogramas atributo - clase objetivo, se ejecutan de uno en uno 
-    # con los histogramas de variables numéricas comentados
-    # sb.histplot(data=dryBean,x='K',hue="Class",kde=True)
-    # sb.histplot(data=occupation,x='S4_Temp',hue="Room_Occupancy_Count",kde=True)
+    fig, axes = plt.subplots(2, 2)
+    axes[0, 0].hist(x="Ex", data=dryBean, edgecolor="black", linewidth=2)
+    axes[0, 0].set_title("Extent")
+    axes[0, 1].hist(x="S", data=dryBean, edgecolor="black", linewidth=2)
+    axes[0, 1].set_title("Solidity")
+    axes[1, 0].hist(x="R", data=dryBean, edgecolor="black", linewidth=2)
+    axes[1, 0].set_title("Roundness")
+    axes[1, 1].hist(x="CO", data=dryBean, edgecolor="black", linewidth=2)
+    axes[1, 1].set_title("Compactness")
+    fig.set_size_inches(10, 10)
 
 
 def occupation_models():

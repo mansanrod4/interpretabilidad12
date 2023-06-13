@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.linear_model import Ridge
 from sklearn.metrics.pairwise import cosine_distances
 
+
 def algoritm_lime(N, model, x, k, min_vals, max_vals):
     X_perturbed = []
     R = []
@@ -29,6 +30,3 @@ def algoritm_lime(N, model, x, k, min_vals, max_vals):
     G = Ridge().fit(np.array(R), Y_perturbed, sample_weight=W)
 
     return G.coef_, G.intercept_, G
-
-
-
