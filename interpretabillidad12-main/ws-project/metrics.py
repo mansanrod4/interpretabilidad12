@@ -2,6 +2,9 @@ import numpy as np
 from scipy.spatial.distance import cdist
 from itertools import combinations
 
+from sklearn.isotonic import spearmanr
+from scipy.spatial.distance import euclidean
+
 #Identidad
 
 def identidad(xa, xb, ea, eb):
@@ -34,20 +37,12 @@ def separability(importances, true_labels):
 
 #Estabilidad
 
-def stability(importances, perturbed_importances):
-    classes = range(len(importances))
-    num_classes = len(classes)
+def stability(x1, x2, e1, e2):
+    distancia_muestras = euclidean(x1.flatten(), x2.flatten())
+    distancia_explicaciones = euclidean(e1.flatten(), e2.flatten())
 
-    combinations_list = list(combinations(classes, 2))
-    stabilities = []
-
-    for class1, class2 in combinations_list:
-        stability = np.mean(np.abs(importances[class1] - importances[class2]) / np.abs(perturbed_importances[class1] - perturbed_importances[class2]))
-        stabilities.append(stability)
-
-    average_stability = np.mean(stabilities)
-
-    return average_stability
+    correlacion, _ = spearmanr(distancia_muestras, distancia_explicaciones)
+    return correlacion
 
 #Selectividad
 
