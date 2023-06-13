@@ -15,8 +15,6 @@ def algoritm_lime(N, model, x, k, min_vals, max_vals):
         # Calcula la distancia coseno entre x y x_perturbed
         dist_cosine = cosine_distances(x.reshape(1, -1), x_perturbed.reshape(1, -1))
         w = 1 - dist_cosine[0, 0]
-        # sim_cosine = cosine_similarity(x.reshape(1, -1), x_perturbed.reshape(1, -1))
-        # w = 1 - sim_cosine[0, 0]
 
         # Crea el vector de representación
         r = np.ones(len(x))
@@ -30,4 +28,7 @@ def algoritm_lime(N, model, x, k, min_vals, max_vals):
     Y_perturbed = model.predict(np.array(X_perturbed))
     G = Ridge().fit(np.array(R), Y_perturbed, sample_weight=W)
 
-    return G.coef_, G.intercept_
+    return G.coef_, G.intercept_, G
+
+
+

@@ -12,6 +12,7 @@ from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.metrics.pairwise import cosine_distances, cosine_similarity
 from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import MinMaxScaler
 from tensorflow import get_logger, keras
 from tensorflow import random as tensorflow_random
 
@@ -54,14 +55,19 @@ def occupation_models():
     occupation["Date"] = date_encoder.fit_transform(occupation["Date"])
     occupation["Time"] = time_encoder.fit_transform(occupation["Time"])
     # Obtener los valores mínimos y máximos de cada atributo
-    min_vals = np.min(occupation, axis=0)
-    max_vals = np.max(occupation, axis=0)
+    # min_vals = np.min(occupation, axis=0)
+    # max_vals = np.max(occupation, axis=0)
     # Normalizar el dataset utilizando Min-Max Scaling
-    occupation = (occupation - min_vals) / (max_vals - min_vals)
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    occupation.iloc[:, 2:-1] = scaler.fit_transform(occupation.iloc[:, 2:-1])
+
+#    occupation = (occupation - min_vals) / (max_vals - min_vals)
 
     # Guardar las 256 líneas antes de la división en entrenamiento y prueba
     muestras_prueba = occupation.sample(n=256, random_state=42)
     occupation = occupation.drop(muestras_prueba.index)
+    clases_prueba = muestras_prueba["Room_Occupancy_Count"]
+
     #Muestras prueba sin fecha, tiempo y clase objetivo
     muestras_prueba = muestras_prueba.iloc[:, 2:-1]
 
@@ -95,6 +101,7 @@ def occupation_models():
         occupation_rn_model,
         occupation_rfr_model,
         muestras_prueba,
+        clases_prueba,
         min_vals,
         max_vals,
     )
@@ -142,6 +149,7 @@ def drybean_models():
     # MUESTRAS PARA PROBAR LA CALIDAD DE LAS EXPLICACIONES
     muestras_prueba = drybean.sample(n=256, random_state=42)
     drybean = drybean.drop(muestras_prueba.index)
+    clases_prueba = muestras_prueba["Class"]
     muestras_prueba = muestras_prueba.iloc[:, :-1]
 
     atributos = drybean.loc[:, "Area":"ShapeFactor4"]
@@ -166,7 +174,7 @@ def drybean_models():
     )
     min_vals = np.min(atributos_entrenamiento, axis=0)
     max_vals = np.max(atributos_entrenamiento, axis=0)
-    return drybean_rn_model, drybean_rf_model, muestras_prueba, min_vals, max_vals
+    return drybean_rn_model, drybean_rf_model, muestras_prueba, clases_prueba, min_vals, max_vals
 
 
 def redneuronal(

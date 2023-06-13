@@ -66,25 +66,32 @@ def estudio_metricas(occupation1ORdrybean2, indice_prueba1, indice_prueba2):
     # Generamos los modelos y las muestras de prueba
     if occupation1ORdrybean2 == 1:
         print("Está generando modelos del dataset Occupation")
-        rn_model, rf_model, muestras_prueba, min_vals, max_vals = gm.occupation_models()
+        rn_model, rf_model, muestras_prueba, clases_prueba, min_vals, max_vals = gm.occupation_models()
     else:
         print("Está generando modelos del dataset Dry Bean")
-        rn_model, rf_model, muestras_prueba, min_vals, max_vals = gm.drybean_models()
+        rn_model, rf_model, muestras_prueba, clases_prueba, min_vals, max_vals = gm.drybean_models()
 
     # Generamos las explicaciones
-    explicacion_rn1, explicacion_rf1 = generar_explicaciones(
+    explicacion_rn1, explicacion_rf1= generar_explicaciones(
         rn_model, rf_model, muestras_prueba, min_vals, max_vals, N, k, indice_prueba1
     )
     explicacion_rn2, explicacion_rf2 = generar_explicaciones(
         rn_model, rf_model, muestras_prueba, min_vals, max_vals, N, k, indice_prueba2
     )
+    print(clases_prueba)
     x1 = muestras_prueba.iloc[indice_prueba1].values
+    y1 = clases_prueba.iloc[indice_prueba1]
     x2 = muestras_prueba.iloc[indice_prueba2].values
+    y2 = clases_prueba.iloc[indice_prueba2]
+
+    print("=================DATOS=================")
 
     print("Muestras")
     print(x1)
     print(x2)
-
+    print("Clases")
+    print(y1)
+    print(y2)
     # Calculamos las métricas
     print("=================METRICAS=================")
     print("----------------Identidad----------------")
@@ -149,3 +156,7 @@ def estudio_metricas(occupation1ORdrybean2, indice_prueba1, indice_prueba2):
         x1.reshape(1, -1), muestras, explicacion_rf1[0].reshape(1, -1), explicaciones_rf
     )
     print("Estabilidad rf: ", estabilidad2)
+
+    # print("--------------Selectividad--------------")
+    # a = metrics.lime_selectividad(explicacion_rn1[0], explicacion_rn1[1], rn_model, x1)
+    # print("Selectividad rn: ", a)
