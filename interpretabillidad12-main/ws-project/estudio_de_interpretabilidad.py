@@ -20,35 +20,22 @@ import generador_de_modelos as gm
 import metrics
 
 
-def estudio_identidad(N, k, model1, atributos_prueba, min_vals, max_vals):
-    correct_count = 0
-    total_pairs = len(list(combinations(range(atributos_prueba.shape[0]), 2)))
-
-    for i, j in combinations(range(atributos_prueba.shape[0]), 2):
-        dist = np.linalg.norm(atributos_prueba[i] - atributos_prueba[j])
-        if dist == 0:
-            explainer1 = lime.algoritm_lime(
-                N, model1, atributos_prueba[i], k, min_vals, max_vals
-            )
-            explainer2 = lime.algoritm_lime(
-                N, model1, atributos_prueba[j], k, min_vals, max_vals
-            )
-
-            if np.allclose(explainer1[0], explainer2[0]):
-                correct_count += 1
-
-    accuracy = (correct_count / total_pairs) * 100
-    return accuracy
-
-
+# Metodo para generar explicaciones de una serie de modelos a partir de un dataset
+# Parametros:
+#  - rn_model: modelo de red neuronal
+#  - rf_model: modelo de random forest
+#  - muestras_prueba: muestras de prueba
+#  - min_vals: valores minimos de las muestras
+#  - max_vals: valores maximos de las muestras
+#  - N: numero de muestras perturbadas a generar
+#  - k: numero de caracteristicas a perturbar por cada muestra
+#  - indice_prueba: indice de la muestra de prueba
 def generar_explicaciones(
     rn_model, rf_model, muestras_prueba, min_vals, max_vals, N, k, indice_prueba
 ):
     np.set_printoptions(threshold=np.inf)
 
     muestra_prueba = muestras_prueba.iloc[indice_prueba].values
-    N = 100
-    k = 10
     rn_explainer = lime.algoritm_lime(
         N, rn_model, muestra_prueba, k, min_vals, max_vals
     )
@@ -59,6 +46,11 @@ def generar_explicaciones(
     return rn_explainer, rf_explainer
 
 
+# Metodo para generar metricas de interpretabilidad de una serie de modelos a partir de un dataset
+# Parametros:
+#   - Elección del datatset: 1 para occupation, 2 para drybean
+#   - indice_prueba1: indice de la muestra de prueba 1
+#   - indice_prueba2: indice de la muestra de prueba 2
 def estudio_metricas(occupation1ORdrybean2, indice_prueba1, indice_prueba2):
     N = 100
     k = 10
@@ -66,19 +58,32 @@ def estudio_metricas(occupation1ORdrybean2, indice_prueba1, indice_prueba2):
     # Generamos los modelos y las muestras de prueba
     if occupation1ORdrybean2 == 1:
         print("Está generando modelos del dataset Occupation")
-        rn_model, rf_model, muestras_prueba, clases_prueba, min_vals, max_vals = gm.occupation_models()
+        (
+            rn_model,
+            rf_model,
+            muestras_prueba,
+            clases_prueba,
+            min_vals,
+            max_vals,
+        ) = gm.occupation_models()
     else:
         print("Está generando modelos del dataset Dry Bean")
-        rn_model, rf_model, muestras_prueba, clases_prueba, min_vals, max_vals = gm.drybean_models()
+        (
+            rn_model,
+            rf_model,
+            muestras_prueba,
+            clases_prueba,
+            min_vals,
+            max_vals,
+        ) = gm.drybean_models()
 
     # Generamos las explicaciones
-    explicacion_rn1, explicacion_rf1= generar_explicaciones(
+    explicacion_rn1, explicacion_rf1 = generar_explicaciones(
         rn_model, rf_model, muestras_prueba, min_vals, max_vals, N, k, indice_prueba1
     )
     explicacion_rn2, explicacion_rf2 = generar_explicaciones(
         rn_model, rf_model, muestras_prueba, min_vals, max_vals, N, k, indice_prueba2
     )
-    print(clases_prueba)
     x1 = muestras_prueba.iloc[indice_prueba1].values
     y1 = clases_prueba.iloc[indice_prueba1]
     x2 = muestras_prueba.iloc[indice_prueba2].values
@@ -87,11 +92,33 @@ def estudio_metricas(occupation1ORdrybean2, indice_prueba1, indice_prueba2):
     print("=================DATOS=================")
 
     print("Muestras")
-    print(x1)
-    print(x2)
-    print("Clases")
-    print(y1)
-    print(y2)
+    print("Muestra x1: ", x1, "Clase: ", y1)
+    print("Muestra x2: ", x2, "Clase: ", y2)
+    print("=================EXPLICACIONES=================")
+    print("..............Explicaciones modelo RN..............")
+    print("Explicacion para la muestra de prueba 1:")
+    print("Matriz de coeficientes:")
+    print(explicacion_rn1[0])
+    print("Vector de interceptores:")
+    print(explicacion_rn1[1])
+    print("Explicacion para la muestra de prueba 2:")
+    print("Matriz de coeficientes:")
+    print(explicacion_rn2[0])
+    print("Vector de interceptores:")
+    print(explicacion_rn2[1])
+
+    print(".............Explicaciones modelo RF..............")
+    print("Explicacion para la muestra de prueba 1:")
+    print("Matriz de coeficientes:")
+    print(explicacion_rf1[0])
+    print("Vector de interceptores:")
+    print(explicacion_rf1[1])
+    print("Explicacion para la muestra de prueba 2:")
+    print("Matriz de coeficientes:")
+    print(explicacion_rf2[0])
+    print("Vector de interceptores:")
+    print(explicacion_rf2[1])
+
     # Calculamos las métricas
     print("=================METRICAS=================")
     print("----------------Identidad----------------")
@@ -157,6 +184,25 @@ def estudio_metricas(occupation1ORdrybean2, indice_prueba1, indice_prueba2):
     )
     print("Estabilidad rf: ", estabilidad2)
 
-    # print("--------------Selectividad--------------")
-    # a = metrics.lime_selectividad(explicacion_rn1[0], explicacion_rn1[1], rn_model, x1)
-    # print("Selectividad rn: ", a)
+    print("--------------Selectividad--------------")
+    selectividad_rn = metrics.lime_selectividad(explicacion_rn1[0], rn_model, x1)
+    selectividad_rf = metrics.lime_selectividad(explicacion_rf1[0], rf_model, x1)
+
+    print("Selectividad_rn ERRORES RESIDUALES: ", selectividad_rn)
+    print("Selectividad_rf ERRORES RESIDUALES: ", selectividad_rf)
+
+    metricas_rn = {
+        "identidad-1": identidad1_rn,
+        "identidad-2": identidad2_rn,
+        "separabilidad": separabilidad2_rn,
+        "estabilidad": estabilidad1,
+        "selectividad": selectividad_rn,
+    }
+    metricas_rf = {
+        "identidad-1": identidad1_rf,
+        "identidad-2": identidad2_rf,
+        "separabilidad": separabilidad2_rf,
+        "estabilidad": estabilidad2,
+        "selectividad": selectividad_rf,
+    }
+    return metricas_rn, metricas_rf

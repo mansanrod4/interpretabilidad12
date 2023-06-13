@@ -36,7 +36,6 @@ def separabilidad(xa, xb, ea, eb):
 
 # Estabilidad
 
-
 def estabilidad(x1, muestras, e1, explicaciones):
     distancias_muestras = []
     distancias_explicaciones = []
@@ -54,14 +53,10 @@ def estabilidad(x1, muestras, e1, explicaciones):
 
 # Selectividad
 
-
-from sklearn.metrics import roc_auc_score
-
-from sklearn.metrics import roc_auc_score
-
-
-def lime_selectividad(coef, intercept, model, x):
-    auc_scores = []
+    # Ordenamos los atributos de mayor a menor importancia en función de los coeficientes de la regresión lineal
+    # Para cada atributo, vamos estableciendo su valor a cero y calculamos la predicción
+    # Calculamos el error residual entre la predicción original y la predicción con los atributos a cero
+def lime_selectividad(coef, model, x):
     y = model.predict(x.reshape(1, -1))
     class_index = np.argmax(y)  # Obtener el índice de la clase de mayor probabilidad
     coef_class = coef[class_index]  # Seleccionar la fila correspondiente a la clase
@@ -71,37 +66,26 @@ def lime_selectividad(coef, intercept, model, x):
     x_perturbed = x.copy()
     list_perturbed = []
     for i in range(len(x)):  #CAMBIAR
-        # Establecer el atributo i en cero
         x_perturbed_i = x_perturbed.copy()
         x_perturbed_i[sorted_indices[i]] = 0
         x_perturbed_i = x_perturbed_i.reshape(1, -1)
-        print("ponemos a 0 =", sorted_indices[i])
-        print("x_perturbed =", x_perturbed_i)
         list_perturbed.append(x_perturbed_i)
 
-    print("list_perturbed =", list_perturbed[0])
     list_predictions = auxiliar_selectividad(list_perturbed, model)
     errores_residuales = []
 
     for i in range(len(list_perturbed)):
         prediction = list_predictions[i]
-        # Calcular el error residual
-
-        print("y =", y)
-        print("prediction =", prediction)
-        print(y - prediction)
         residual = y - prediction
-        print("Residual with attribute", residual)
         errores_residuales.append(residual.tolist())
 
     return errores_residuales
 
+    # Calculamos las predicciones de las muestras perturbadas
 def auxiliar_selectividad(list_perturbed, model):
     list_predictions = []
     for n in range(len(list_perturbed)):
-        print("list_perturbed[n] =", list_perturbed[n])
         p = model.predict(list_perturbed[n])
-        print("p =", p)
         list_predictions.append(p)
 
     return list_predictions
@@ -109,7 +93,6 @@ def auxiliar_selectividad(list_perturbed, model):
 # Coherencia
 #Aquellos atributos con menor importancia (se saca con selectividad) serán eliminados de X_original
 #La señal resultante será X_sin_caracteristicas: data.drop(["noImportante1", "noImportante2"..], axis=1)
-
 
 def coherence(X_original, y_original, X_sin_caracteristicas):
     

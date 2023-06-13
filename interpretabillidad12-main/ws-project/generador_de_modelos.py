@@ -54,21 +54,15 @@ def occupation_models():
     time_encoder = LabelEncoder()
     occupation["Date"] = date_encoder.fit_transform(occupation["Date"])
     occupation["Time"] = time_encoder.fit_transform(occupation["Time"])
-    # Obtener los valores mínimos y máximos de cada atributo
-    # min_vals = np.min(occupation, axis=0)
-    # max_vals = np.max(occupation, axis=0)
-    # Normalizar el dataset utilizando Min-Max Scaling
     scaler = MinMaxScaler(feature_range=(0, 1))
     occupation.iloc[:, 2:-1] = scaler.fit_transform(occupation.iloc[:, 2:-1])
-
-#    occupation = (occupation - min_vals) / (max_vals - min_vals)
 
     # Guardar las 256 líneas antes de la división en entrenamiento y prueba
     muestras_prueba = occupation.sample(n=256, random_state=42)
     occupation = occupation.drop(muestras_prueba.index)
     clases_prueba = muestras_prueba["Room_Occupancy_Count"]
 
-    #Muestras prueba sin fecha, tiempo y clase objetivo
+    # Muestras prueba sin fecha, tiempo y clase objetivo
     muestras_prueba = muestras_prueba.iloc[:, 2:-1]
 
     atributos = occupation.loc[:, "S1_Temp":"S7_PIR"]
@@ -82,7 +76,9 @@ def occupation_models():
         atributos_prueba,
         objetivo_entrenamiento,
         objetivo_prueba,
-    ) = model_selection.train_test_split(atributos, objetivo, test_size=0.2, random_state=42)
+    ) = model_selection.train_test_split(
+        atributos, objetivo, test_size=0.2, random_state=42
+    )
     print("==============RED NEURONAL==================")
     occupation_rn_model = redneuronal(
         atributos_entrenamiento, objetivo_entrenamiento, 16, 4
@@ -163,18 +159,30 @@ def drybean_models():
         atributos_prueba,
         objetivo_entrenamiento,
         objetivo_prueba,
-    ) = model_selection.train_test_split(atributos, objetivo, test_size=0.3, random_state=42)
+    ) = model_selection.train_test_split(
+        atributos, objetivo, test_size=0.3, random_state=42
+    )
     print("==============RED NEURONAL==================")
     drybean_rn_model = redneuronal(
         atributos_entrenamiento, objetivo_entrenamiento, 16, 7
     )
     print("==============RANDOM FOREST==================")
     drybean_rf_model = randomforest(
-        atributos_entrenamiento, objetivo_entrenamiento, atributos_prueba, objetivo_prueba
+        atributos_entrenamiento,
+        objetivo_entrenamiento,
+        atributos_prueba,
+        objetivo_prueba,
     )
     min_vals = np.min(atributos_entrenamiento, axis=0)
     max_vals = np.max(atributos_entrenamiento, axis=0)
-    return drybean_rn_model, drybean_rf_model, muestras_prueba, clases_prueba, min_vals, max_vals
+    return (
+        drybean_rn_model,
+        drybean_rf_model,
+        muestras_prueba,
+        clases_prueba,
+        min_vals,
+        max_vals,
+    )
 
 
 def redneuronal(
@@ -188,7 +196,6 @@ def redneuronal(
     )
     model.add(keras.layers.Dense(70, activation="relu"))
     model.add(keras.layers.Dense(output_shape, activation="softmax"))
-    # model.summary()
     model.compile(
         optimizer="SGD", loss="categorical_crossentropy", metrics=["accuracy"]
     )
@@ -197,6 +204,7 @@ def redneuronal(
         atributos_entrenamiento, objetivo_entrenamiento, batch_size=256, epochs=20
     )
     return model
+
 
 def randomforest(
     atributos_entrenamiento, objetivo_entrenamiento, atributos_test, objetivo_test
@@ -219,4 +227,3 @@ def randomforest(
     )
     print("R2 para Random Forest Regressor: ", r2_score(objetivo_test, y_pred_rf))
     return rf_model
-
