@@ -57,6 +57,9 @@ def estabilidad(x1, muestras, e1, explicaciones):
 
 from sklearn.metrics import roc_auc_score
 
+from sklearn.metrics import roc_auc_score
+
+
 def lime_selectividad(coef, intercept, model, x):
     auc_scores = []
     y = model.predict(x.reshape(1, -1))
@@ -69,36 +72,39 @@ def lime_selectividad(coef, intercept, model, x):
     list_perturbed = []
     for i in range(len(x)):  #CAMBIAR
         # Establecer el atributo i en cero
-        x_perturbed_i = x_perturbed
+        x_perturbed_i = x_perturbed.copy()
         x_perturbed_i[sorted_indices[i]] = 0
+        x_perturbed_i = x_perturbed_i.reshape(1, -1)
         print("ponemos a 0 =", sorted_indices[i])
         print("x_perturbed =", x_perturbed_i)
-        list_perturbed.append(x_perturbed_i.reshape(1, -1))
+        list_perturbed.append(x_perturbed_i)
 
+    print("list_perturbed =", list_perturbed[0])
     list_predictions = auxiliar_selectividad(list_perturbed, model)
+    errores_residuales = []
 
     for i in range(len(list_perturbed)):
         prediction = list_predictions[i]
         # Calcular el error residual
+
+        print("y =", y)
+        print("prediction =", prediction)
+        print(y - prediction)
         residual = y - prediction
-        print("Residual with attribute", sorted_indices[i], "set to 0:", residual)
+        print("Residual with attribute", residual)
+        errores_residuales.append(residual.tolist())
 
-        # Calcular el AUC utilizando el error residual
-        auc = roc_auc_score(y, prediction)
-        auc_scores.append(auc)
-        print("AUC with attribute", sorted_indices[i], "set to 0:", auc)
-
-    print("auc_scores =", auc_scores)
-    return auc_scores
+    return errores_residuales
 
 def auxiliar_selectividad(list_perturbed, model):
     list_predictions = []
     for n in range(len(list_perturbed)):
+        print("list_perturbed[n] =", list_perturbed[n])
         p = model.predict(list_perturbed[n])
         print("p =", p)
         list_predictions.append(p)
-    return list_predictions
 
+    return list_predictions
 
 # Coherencia
 #Aquellos atributos con menor importancia (se saca con selectividad) serán eliminados de X_original
